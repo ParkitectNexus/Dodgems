@@ -1,0 +1,6 @@
+{
+    "BaseDir": ".",
+    "IsDevelopment": true,
+    "Name": "Dodgems",
+    "Project": "BumperCars.csproj"
+}
