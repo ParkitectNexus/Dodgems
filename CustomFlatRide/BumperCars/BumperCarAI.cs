@@ -1,376 +1,353 @@
 ﻿using System.Collections;
-using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
-public class BumperCarAI : MonoBehaviour {
-    
-    private Rigidbody _rigidbody;
-
-    private Vector3 _wanderTarget = Vector3.zero;
-
-    public float wanderRadius = 2;
-
-    public float wanderDistance = 8;
-
-    public float wanderJitter = 0.1f;
-
-    public float movingSpeed = 3;
-
-    private float _oldHeading;
-
-    public BumperCars BumperCars { get; set; }
-
-    private List<BumperCar> _bumperCars;
-
-    private bool _seeking = false;
-
-    public BumperCarAI Target = null;
-
-    public BumperCarAI FleeTarget = null;
-
-    private enum STATUS
+namespace BumperCars.CustomFlatRide.BumperCars
+{
+    public class BumperCarAi : MonoBehaviour
     {
-        PURSUIING,
-        FLEEING,
-        SEEKING
-    }
+        private Rigidbody _rigidbody;
 
-    private STATUS _status = STATUS.SEEKING;
-    private bool _fleeing = false;
+        private Vector3 _wanderTarget = Vector3.zero;
 
-    void Awake()
-    {
-        CapsuleCollider collider = gameObject.AddComponent<CapsuleCollider>();
+        public float WanderRadius = 2;
 
-        collider.center = new Vector3(0.001384966f, 0.1229123f, 0.03784022f);
-        collider.radius = 0.25f;
-        collider.height = 0.01481656f;
+        private readonly float _wanderDistance = 8;
 
-        _rigidbody = gameObject.AddComponent<Rigidbody>();
-        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-    }
+        private readonly float _wanderJitter = 0.1f;
 
-    void Start()
-    {
-        _bumperCars = BumperCars.GetComponentsInChildren<BumperCar>().Except(new [] { gameObject.GetComponent<BumperCar>() }).ToList();
+        private readonly float _movingSpeed = 10;
 
-        Physics.gravity = new Vector3(0, -9.81f, 0);
-    }
+        private float _oldHeading;
 
-    void FixedUpdate()
-    {
-        _rigidbody.mass = 9;
-        switch (_status)
+        public FlatRideScript.BumperCars BumperCars { get; set; }
+
+        private List<BumperCar> _bumperCars;
+
+        private bool _seeking;
+
+        public BumperCarAi Target;
+
+        public BumperCarAi FleeTarget;
+
+        private enum Status
         {
-            case STATUS.SEEKING:
-                Seek();
-                break;
-            case STATUS.PURSUIING:
-                Pursuit();
-                break;
-            case STATUS.FLEEING:
-                Flee();
-                break;
+            Pursuiing,
+            FLEEING,
+            SEEKING
         }
 
-        float wantedheading = Mathf.Atan2(_rigidbody.velocity.x, _rigidbody.velocity.z);
+        private Status _status = Status.SEEKING;
 
-        float heading = Mathf.Lerp(_oldHeading, wantedheading, 4f * Time.deltaTime);
-
-        _oldHeading = heading;
-
-        transform.rotation = Quaternion.Euler(0, heading * Mathf.Rad2Deg, 0);
-    }
-
-    private void Pursuit()
-    {
-        if (Target != null)
+        void Awake()
         {
-            Vector3 direction = Vector3.zero;
+            CapsuleCollider collider = gameObject.AddComponent<CapsuleCollider>();
 
-            direction += WallAvoidance();
-            direction += Pursuit(Target.transform.position, Target.GetComponent<Rigidbody>().velocity);
+            collider.center = new Vector3(0.001384966f, 0.1229123f, 0.03784022f);
+            collider.radius = 0.25f;
+            collider.height = 0.01481656f;
 
-            _rigidbody.AddForce(direction.normalized * movingSpeed);
-        }
-    }
-
-    private void Flee()
-    {
-        if (!_seeking)
-        {
-            StartCoroutine(Fleeing());
-            _fleeing = true;
-        }
-        
-        Vector3 direction = Vector3.zero;
-
-        if (FleeTarget != null)
-        {
-            direction += Separation();
-            direction += Flee(FleeTarget.transform.position);
-            //direction += Cohesion();
-            direction += WallAvoidance();
+            _rigidbody = gameObject.AddComponent<Rigidbody>();
+            _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
+            _rigidbody.mass = 3;
         }
 
-        _rigidbody.AddForce(direction.normalized * movingSpeed);
-    }
-
-    private IEnumerator Fleeing()
-    {
-        yield return new WaitForSeconds(Random.value * 0.3f + 0.2f);
-        
-        _status = STATUS.SEEKING;
-        _fleeing = false;
-    }
-
-    private void Seek()
-    {
-        if (!_seeking)
+        void Start()
         {
-            _wanderTarget = transform.InverseTransformPoint(Vector3.forward);
-            StartCoroutine(Seeking());
-            _seeking = true;
+            _bumperCars = BumperCars.GetComponentsInChildren<BumperCar>().Except(new[] { gameObject.GetComponent<BumperCar>() }).ToList();
         }
 
-        Vector3 direction = Vector3.zero;
-
-        direction += Wander();
-        direction += Separation();
-        //direction += Cohesion();
-        direction += WallAvoidance();
-
-        _rigidbody.AddForce(direction.normalized * movingSpeed);
-    }
-
-    private IEnumerator Seeking()
-    {
-        yield return new WaitForSeconds(Random.value * 0.3f + 0.2f);
-
-        Target = FindTarget(this);
-        _status = STATUS.PURSUIING;
-        _seeking = false;
-    }
-
-
-    void OnCollisionStay(Collision collision)
-    {
-        BumperCarAI bumperCarAi = collision.gameObject.GetComponent<BumperCarAI>();
-        if (bumperCarAi != null)
+        void FixedUpdate()
         {
-            if (Target == bumperCarAi) // op zoek naar hem
+            switch (_status)
             {
-                _status = STATUS.SEEKING;
+                case Status.SEEKING:
+                    Seek();
+                    break;
+                case Status.Pursuiing:
+                    Pursuit();
+                    break;
+                case Status.FLEEING:
+                    Flee();
+                    break;
             }
-            else
-            {
-                FleeTarget = bumperCarAi;
-                _status = STATUS.FLEEING;
-            }
+
+            float wantedheading = Mathf.Atan2(_rigidbody.velocity.x, _rigidbody.velocity.z);
+
+            float heading = Mathf.Lerp(_oldHeading, wantedheading, 4f * Time.deltaTime);
+
+            _oldHeading = heading;
+
+            transform.rotation = Quaternion.Euler(0, heading * Mathf.Rad2Deg, 0);
         }
-    }
 
-    private BumperCarAI FindTarget(BumperCarAI excluded)
-    {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, 10);
-
-        List<BumperCarAI> cars = new List<BumperCarAI>();
-
-        foreach (Collider collider in colliders)
+        void OnCollisionStay(Collision collision)
         {
-            BumperCarAI BumperCarAI = collider.GetComponent<BumperCarAI>();
-            if (BumperCarAI != null)
+            BumperCarAi bumperCarAi = collision.gameObject.GetComponent<BumperCarAi>();
+            if (bumperCarAi != null)
             {
-                if (BumperCarAI.gameObject == gameObject || BumperCarAI.gameObject == excluded.gameObject)
-                    continue;
-
-                if (transform.TransformPoint(BumperCarAI.gameObject.transform.position).z < 0)
+                if (Target == bumperCarAi) // op zoek naar hem
                 {
-                    cars.Add(BumperCarAI);
+                    _status = Status.SEEKING;
                 }
                 else
                 {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        cars.Add(BumperCarAI);
-                    }
+                    FleeTarget = bumperCarAi;
+                    _status = Status.FLEEING;
                 }
             }
-        }
-
-        return cars[(int)(Random.value * cars.Count)];
-    }
-    
-    public Vector3 Wander()
-    {
-        const float wanderRadius = 2;
-
-        const float wanderDistance = 4;
-
-        const float wanderJitter = 0.5f;
-
-        _wanderTarget += new Vector3((Random.value * 2f - 1) * wanderJitter, 0, (Random.value * 2f - 1) * wanderJitter);
-
-        _wanderTarget.Normalize();
-
-        _wanderTarget *= wanderRadius;
-
-        Vector3 targetLocal = _wanderTarget + Vector3.forward * wanderDistance;
-
-        Vector3 targetWorld = transform.TransformPoint(targetLocal);
-
-        return Seek(targetWorld);
-    }
-
-    public Vector3 Separation()
-    {
-        Vector3 steeringForce = Vector3.zero;
-
-        foreach (BumperCar bumperCar in _bumperCars)
-        {
-            Vector3 toAgent = transform.position - bumperCar.transform.position;
-
-            if (toAgent.magnitude != 0)
+            else if (collision.gameObject.name.StartsWith("Bound"))
             {
-                //scale the force inversely proportional to the agents distance  
-                //from its neighbor.
-                steeringForce += toAgent.normalized/toAgent.magnitude;
+                _status = Status.SEEKING;
+            }
+            else if (collision.gameObject.name.StartsWith("Mouse") || collision.gameObject.name.StartsWith("Land"))
+            {
+                Physics.IgnoreCollision(GetComponent<Collider>(), collision.collider);
             }
         }
 
-        return steeringForce.normalized;
-    }
-    
-    public Vector3 Cohesion()
-    {
-        //first find the center of mass of all the agents
-        Vector3 centerOfMass = Vector3.zero;
-        Vector3 steeringForce = Vector3.zero;
-
-        int NeighborCount = 0;
-
-        foreach (BumperCar bumperCar in _bumperCars)
+        private void Pursuit()
         {
-            centerOfMass += bumperCar.transform.position;
-
-            ++NeighborCount;
-        }
-
-        if (NeighborCount > 0)
-        {
-            //the center of mass is the average of the sum of positions
-            centerOfMass /= NeighborCount;
-
-            //now seek towards that position
-            steeringForce = Seek(centerOfMass);
-        }
-
-        //the magnitude of cohesion is usually much larger than separation or
-        //allignment so it usually helps to normalize it.
-        return steeringForce.normalized;
-    }
-
-    Vector3 WallAvoidance()
-    {
-  //the feelers are contained in a std::vector, m_Feelers
-  //CreateFeelers();
-
-    float DistToThisIP = 0.0f;
-        float DistToClosestIP = float.MaxValue;
-
-
-        Vector3 SteeringForce = Vector3.zero;
-        Vector3 point = Vector3.zero;
-        Vector3 ClosestPoint = Vector3.zero;
-
-        Vector3[] feelers = new[] {Vector3.left, Vector3.forward, Vector3.right};
-
-        foreach (Vector3 feeler in feelers)
-        {
-            //this will hold an index into the vector of walls
-            GameObject ClosestWall = null;
-
-            Vector3 worldFeeler = transform.TransformDirection(feeler);
-
-            RaycastHit hit;
-
-            Ray ray = new Ray(transform.position, worldFeeler);
-
-            if (Physics.Raycast(ray, out hit, 5))
+            if (Target != null)
             {
-                if (hit.collider.gameObject.GetComponent<BumperCarAI>() != null) // een muur
+                Vector3 direction = Vector3.zero;
+
+                direction += WallAvoidance();
+                direction += Pursuit(Target.transform.position, Target.GetComponent<Rigidbody>().velocity);
+
+                _rigidbody.AddForce(direction.normalized * _movingSpeed);
+            }
+        }
+
+        private void Flee()
+        {
+            if (!_seeking)
+            {
+                StartCoroutine(Fleeing());
+            }
+
+            Vector3 direction = Vector3.zero;
+
+            if (FleeTarget != null)
+            {
+                direction += Separation();
+                direction += Flee(FleeTarget.transform.position);
+                //direction += Cohesion();
+                direction += WallAvoidance();
+            }
+
+            _rigidbody.AddForce(direction.normalized * _movingSpeed);
+        }
+
+        private IEnumerator Fleeing()
+        {
+            yield return new WaitForSeconds(Random.value * 0.3f + 0.2f);
+
+            _status = Status.SEEKING;
+        }
+
+        private void Seek()
+        {
+            if (!_seeking)
+            {
+                _wanderTarget = transform.InverseTransformPoint(Vector3.forward);
+                StartCoroutine(Seeking());
+                _seeking = true;
+            }
+
+            Vector3 direction = Vector3.zero;
+
+            direction += Wander();
+            //direction += Separation();
+            direction += Cohesion();
+            direction += WallAvoidance();
+
+            _rigidbody.AddForce(direction.normalized * _movingSpeed);
+        }
+
+        private IEnumerator Seeking()
+        {
+            yield return new WaitForSeconds(Random.value * 0.3f + 0.2f);
+
+            Target = FindTarget(this);
+            _status = Status.Pursuiing;
+            _seeking = false;
+        }
+
+        private BumperCarAi FindTarget(BumperCarAi excluded)
+        {
+            Collider[] colliders = Physics.OverlapSphere(transform.position, 10);
+
+            List<BumperCarAi> cars = new List<BumperCarAi>();
+
+            foreach (Collider collider in colliders)
+            {
+                BumperCarAi bumperCarAi = collider.GetComponent<BumperCarAi>();
+                if (bumperCarAi != null)
                 {
-                    //is this the closest found so far? If so keep a record
-                    if (DistToThisIP < DistToClosestIP)
+                    if (bumperCarAi.gameObject == gameObject || bumperCarAi.gameObject == excluded.gameObject)
+                        continue;
+
+                    if (transform.TransformPoint(bumperCarAi.gameObject.transform.position).z < 0)
                     {
-                        DistToClosestIP = DistToThisIP;
-
-                        ClosestWall = hit.collider.gameObject;
-
-                        ClosestPoint = hit.point;
+                        cars.Add(bumperCarAi);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            cars.Add(bumperCarAi);
+                        }
                     }
                 }
             }
 
-            //if an intersection point has been detected, calculate a force  
-            //that will direct the agent away
-            if (ClosestWall != null)
-            {
-                //calculate by what distance the projected position of the agent
-                //will overshoot the wall
-                Vector3 OverShoot = worldFeeler - ClosestPoint;
-
-                Vector3 normal = new Vector3(
-                    Mathf.Abs(ClosestWall.transform.position.x) > Mathf.Abs(ClosestWall.transform.position.z) ? -ClosestWall.transform.position.x : 0,
-                    0,
-                    Mathf.Abs(ClosestWall.transform.position.z) > Mathf.Abs(ClosestWall.transform.position.x) ? -ClosestWall.transform.position.z : 0);
-
-                //create a force in the direction of the wall normal, with a 
-                //magnitude of the overshoot
-                SteeringForce = normal * OverShoot.magnitude;
-            }
+            return cars[(int)(Random.value * cars.Count)];
         }
 
-        return SteeringForce.normalized;
-    }
-
-
-    public Vector3 Flee(Vector3 toEvade)
-    {
-        Vector3 desiredVelocity = (transform.position - toEvade).normalized * movingSpeed;
-
-        return desiredVelocity - _rigidbody.velocity;
-    }
-
-    public Vector3 Pursuit(Vector3 evaderPos, Vector3 evaderVelocity)
-    {
-        //if the evader is ahead and facing the agent then we can just seek
-        //for the evader's current position.
-        Vector3 ToEvader = evaderPos - transform.position;
-
-        double RelativeHeading = Vector3.Dot(_rigidbody.velocity.normalized, evaderVelocity.normalized);
-
-        if ((Vector3.Dot(evaderVelocity.normalized, _rigidbody.velocity.normalized) > 0) && (RelativeHeading < -0.95))
+        public Vector3 Wander()
         {
-            return Seek(evaderPos);
+            _wanderTarget += new Vector3((Random.value * 2f - 1) * _wanderJitter, 0, (Random.value * 2f - 1) * _wanderJitter);
+
+            _wanderTarget.Normalize();
+
+            _wanderTarget *= WanderRadius;
+
+            Vector3 targetLocal = _wanderTarget + Vector3.forward * _wanderDistance;
+
+            Vector3 targetWorld = transform.TransformPoint(targetLocal);
+
+            return Seek(targetWorld);
         }
 
-        //Not considered ahead so we predict where the evader will be.
+        public Vector3 Separation()
+        {
+            Vector3 steeringForce = Vector3.zero;
 
-        //the lookahead time is propotional to the distance between the evader
-        //and the pursuer; and is inversely proportional to the sum of the
-        //agent's velocities
-        float LookAheadTime = evaderVelocity.magnitude / (movingSpeed + evaderVelocity.magnitude);
+            foreach (BumperCar bumperCar in _bumperCars)
+            {
+                Vector3 toAgent = transform.position - bumperCar.transform.position;
 
-        //now seek to the predicted future position of the evader
-        return Seek(evaderPos + evaderVelocity * LookAheadTime);
-    }
+                if (toAgent.magnitude != 0)
+                {
+                    steeringForce += toAgent.normalized / toAgent.magnitude;
+                }
+            }
 
-    public Vector3 Seek(Vector3 targetPos)
-    {
-        Vector3 desiredVelocity = (targetPos - transform.position).normalized * movingSpeed;
+            return steeringForce.normalized;
+        }
 
-        return (desiredVelocity - _rigidbody.velocity).normalized;
+        public Vector3 Cohesion()
+        {
+            Vector3 centerOfMass = Vector3.zero;
+            Vector3 steeringForce = Vector3.zero;
+
+            int neighborCount = 0;
+
+            foreach (BumperCar bumperCar in _bumperCars)
+            {
+                centerOfMass += bumperCar.transform.position;
+
+                ++neighborCount;
+            }
+
+            if (neighborCount > 0)
+            {
+                centerOfMass /= neighborCount;
+            
+                steeringForce = Seek(centerOfMass);
+            }
+        
+            return steeringForce.normalized;
+        }
+
+        Vector3 WallAvoidance()
+        {
+            float distToThisIp = 0.0f;
+            float distToClosestIp = float.MaxValue;
+
+
+            Vector3 steeringForce = Vector3.zero;
+            Vector3 closestPoint = Vector3.zero;
+
+            Vector3[] feelers = { Vector3.left, Vector3.forward, Vector3.right };
+
+            foreach (Vector3 feeler in feelers)
+            {
+                //this will hold an index into the vector of walls
+                GameObject closestWall = null;
+
+                Vector3 worldFeeler = transform.TransformDirection(feeler);
+
+                Ray ray = new Ray(transform.position, worldFeeler);
+
+                RaycastHit[] hits = Physics.RaycastAll(ray, 5);
+
+                if (hits.Any())
+                {
+                    foreach (RaycastHit hit in hits)
+                    {
+                        if (hit.collider.gameObject.name.StartsWith("Bound")) // een muur
+                        {
+                            //is this the closest found so far? If so keep a record
+                            if (distToThisIp < distToClosestIp)
+                            {
+                                distToClosestIp = distToThisIp;
+
+                                closestWall = hit.collider.gameObject;
+
+                                closestPoint = hit.point;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            
+                if (closestWall != null)
+                {
+                    Vector3 overShoot = worldFeeler - closestPoint;
+
+                    Vector3 normal = new Vector3(
+                        Mathf.Abs(closestWall.transform.position.x) > Mathf.Abs(closestWall.transform.position.z) ? -closestWall.transform.position.x : 0,
+                        0,
+                        Mathf.Abs(closestWall.transform.position.z) > Mathf.Abs(closestWall.transform.position.x) ? -closestWall.transform.position.z : 0);
+                
+                    steeringForce = normal * overShoot.magnitude;
+                }
+            }
+
+            return steeringForce.normalized;
+        }
+
+
+        public Vector3 Flee(Vector3 toEvade)
+        {
+            Vector3 desiredVelocity = (transform.position - toEvade).normalized * _movingSpeed;
+
+            return desiredVelocity - _rigidbody.velocity;
+        }
+
+        public Vector3 Pursuit(Vector3 evaderPos, Vector3 evaderVelocity)
+        {
+            float relativeHeading = Vector3.Dot(_rigidbody.velocity.normalized, evaderVelocity.normalized);
+
+            if ((Vector3.Dot(evaderVelocity.normalized, _rigidbody.velocity.normalized) > 0) && (relativeHeading < -0.95))
+            {
+                return Seek(evaderPos);
+            }
+
+            float lookAheadTime = evaderVelocity.magnitude / (_movingSpeed + evaderVelocity.magnitude);
+        
+            return Seek(evaderPos + evaderVelocity * lookAheadTime);
+        }
+
+        public Vector3 Seek(Vector3 targetPos)
+        {
+            Vector3 desiredVelocity = (targetPos - transform.position).normalized * _movingSpeed;
+
+            return (desiredVelocity - _rigidbody.velocity).normalized;
+        }
     }
 }

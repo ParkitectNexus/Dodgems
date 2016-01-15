@@ -1,33 +1,32 @@
 ﻿using UnityEngine;
 
-
-public class Main : IMod
+namespace BumperCars.CustomFlatRide
 {
-    private GameObject _go;
-
-    public void onEnabled()
+    public class Main : IMod
     {
-        _go = new GameObject();
+        private GameObject _go;
 
-        _go.AddComponent<FlatRidesLoader>();
+        public void onEnabled()
+        {
+            _go = new GameObject();
 
-        _go.GetComponent<FlatRidesLoader>().Path = Path;
+            _go.AddComponent<FlatRidesLoader>();
+            _go.GetComponent<FlatRidesLoader>().Path = Path;
+            _go.GetComponent<FlatRidesLoader>().Identifier = Identifier;
+            _go.GetComponent<FlatRidesLoader>().LoadDodgem();
+        }
 
-        _go.GetComponent<FlatRidesLoader>().Identifier = Identifier;
+        public void onDisabled()
+        {
+            _go.GetComponent<FlatRidesLoader>().UnloadScenery();
 
-        _go.GetComponent<FlatRidesLoader>().LoadDodgem();
+            Object.Destroy(_go);
+        }
+
+        public string Name { get { return "Dodgems"; } }
+        public string Description { get { return "Dodgems flat ride"; } }
+        public string Path { get; set; }
+        public string Identifier { get; set; }
     }
-
-    public void onDisabled()
-    {
-        _go.GetComponent<FlatRidesLoader>().UnloadScenery();
-
-        Object.Destroy(_go);
-    }
-
-    public string Name { get { return "KMG Experience"; } }
-    public string Description { get { return "KMG Experience Mod"; } }
-    public string Path { get; set; }
-    public string Identifier { get; set; }
 }
 
