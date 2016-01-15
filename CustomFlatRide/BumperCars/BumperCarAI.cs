@@ -266,8 +266,7 @@ namespace BumperCars.CustomFlatRide.BumperCars
         {
             float distToThisIp = 0.0f;
             float distToClosestIp = float.MaxValue;
-
-
+            
             Vector3 steeringForce = Vector3.zero;
             Vector3 closestPoint = Vector3.zero;
 
@@ -275,7 +274,6 @@ namespace BumperCars.CustomFlatRide.BumperCars
 
             foreach (Vector3 feeler in feelers)
             {
-                //this will hold an index into the vector of walls
                 GameObject closestWall = null;
 
                 Vector3 worldFeeler = transform.TransformDirection(feeler);
@@ -290,7 +288,6 @@ namespace BumperCars.CustomFlatRide.BumperCars
                     {
                         if (hit.collider.gameObject.name.StartsWith("Bound")) // een muur
                         {
-                            //is this the closest found so far? If so keep a record
                             if (distToThisIp < distToClosestIp)
                             {
                                 distToClosestIp = distToThisIp;

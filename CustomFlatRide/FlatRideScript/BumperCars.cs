@@ -11,8 +11,10 @@ namespace BumperCars.CustomFlatRide.FlatRideScript
             Running
         }
     
-        [Serialized] public State CurrentState;
+        [Serialized]
+        public State CurrentState;
 
+        [Serialized]
         private float _time;
 
         public AudioClip Tune;
