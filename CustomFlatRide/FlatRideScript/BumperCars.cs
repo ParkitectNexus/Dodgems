@@ -15,7 +15,7 @@ namespace BumperCars.CustomFlatRide.FlatRideScript
         public State CurrentState;
 
         [Serialized]
-        private float _time;
+        public float Time;
 
         public AudioClip Tune;
 
@@ -56,12 +56,12 @@ namespace BumperCars.CustomFlatRide.FlatRideScript
         {
             if (CurrentState == State.Running)
             {
-                _time += Time.deltaTime;
+                Time += UnityEngine.Time.deltaTime;
 
-                if (_time > 25)
+                if (Time > 25)
                 {
                     CurrentState = State.Stopped;
-                    _time = 0;
+                    Time = 0;
                 }
             }
         }
