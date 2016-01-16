@@ -37,10 +37,10 @@ namespace BumperCars.CustomFlatRide.FlatRideScript
             audio.clip = Tune;
             audio.playOnAwake = true;
             audio.loop = true;
-            audio.spatialBlend = 1;
+            audio.spatialBlend = 0.9f;
             audio.rolloffMode = AudioRolloffMode.Linear;
-            audio.maxDistance = 75;
-            audio.volume = 0.1f;
+            audio.maxDistance = 40;
+            audio.volume = 0.07f;
 
             base.Start();
         }
