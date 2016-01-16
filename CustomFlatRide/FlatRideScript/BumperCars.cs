@@ -58,7 +58,7 @@ namespace BumperCars.CustomFlatRide.FlatRideScript
             {
                 Time += UnityEngine.Time.deltaTime;
 
-                if (Time > 25)
+                if (Time > 60)
                 {
                     CurrentState = State.Stopped;
                     Time = 0;
