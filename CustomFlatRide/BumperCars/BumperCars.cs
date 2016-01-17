@@ -1,61 +1,73 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class BumperCars : FlatRide
+namespace BumperCars.CustomFlatRide.BumperCars
 {
-    public new enum State
+    public class BumperCars : FlatRide
     {
-        STOPPED,
-        RUNNING
-    }
-    
-    [Serialized] public State currentState;
-
-    private float _time;
-
-    void Start()
-    {
-        currentState = State.STOPPED;
-
-        Transform cars = transform.Find("Cars");
-
-        foreach (Transform car in cars)
+        public new enum State
         {
-            car.gameObject.AddComponent<BumperCar>();
+            Stopped,
+            Running
+        }
+    
+        [Serialized]
+        public State CurrentState;
+
+        [Serialized]
+        public float Time;
+
+        public AudioClip Tune;
+
+        void Start()
+        {
+            guestsCanRaiseArms = false;
+
+            CurrentState = State.Stopped;
+
+            Transform cars = transform.Find("Cars");
+
+            foreach (Transform car in cars)
+            {
+                car.gameObject.AddComponent<BumperCar>();
+            }
+
+            AudioSource audio = gameObject.AddComponent<AudioSource>();
+
+            audio.clip = Tune;
+            audio.playOnAwake = true;
+            audio.loop = true;
+            audio.spatialBlend = 0.9f;
+            audio.rolloffMode = AudioRolloffMode.Linear;
+            audio.maxDistance = 40;
+            audio.volume = 0.07f;
+
+            base.Start();
         }
 
-        base.Start();
-    }
-
-    public override void onStartRide()
-    {
-        base.onStartRide();
-
-        currentState = State.RUNNING;
-    }
-
-    public override void tick(StationController stationController)
-    {
-        if (currentState == State.RUNNING)
+        public override void onStartRide()
         {
-            _time += Time.deltaTime;
+            base.onStartRide();
 
-            if (_time > 25)
+            CurrentState = State.Running;
+        }
+
+        public override void tick(StationController stationController)
+        {
+            if (CurrentState == State.Running)
             {
-                currentState = State.STOPPED;
-                _time = 0;
+                Time += UnityEngine.Time.deltaTime;
+
+                if (Time > 60)
+                {
+                    CurrentState = State.Stopped;
+                    Time = 0;
+                }
             }
         }
-    }
     
-    public override bool shouldLetGuestsOut()
-    {
-        return currentState == State.STOPPED;
-    }
-
-    public override bool shouldLetGuestsIn(StationController stationController)
-    {
-        return currentState == State.STOPPED;
+        public override bool shouldLetGuestsOut()
+        {
+            return CurrentState == State.Stopped;
+        }
     }
 }

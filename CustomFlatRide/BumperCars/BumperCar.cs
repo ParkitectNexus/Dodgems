@@ -1,34 +1,35 @@
 ﻿using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
 
-public class BumperCar : MonoBehaviour
+namespace BumperCars.CustomFlatRide.BumperCars
 {
-    private GameObject _physicsCar;
-
-    private BumperCars _bumperCars;
-
-    void Awake()
+    public class BumperCar : MonoBehaviour
     {
-        _bumperCars = GetComponentInParent<BumperCars>();
+        private GameObject _physicsCar;
 
-        _physicsCar = new GameObject();
-        _physicsCar.AddComponent<BumperCarAI>();
-        _physicsCar.GetComponent<BumperCarAI>().BumperCars = _bumperCars;
-        _physicsCar.transform.position = transform.position;
-        _physicsCar.transform.rotation = transform.rotation;
-    }
+        private BumperCars _bumperCars;
 
-    void Update()
-    {
-        _physicsCar.SetActive(_bumperCars.currentState == BumperCars.State.RUNNING && transform.FindChild("seat").childCount > 0);
+        void Awake()
+        {
+            _bumperCars = GetComponentInParent<BumperCars>();
 
-        transform.position = _physicsCar.transform.position;
-        transform.rotation = _physicsCar.transform.rotation;
-    }
+            _physicsCar = new GameObject();
+            _physicsCar.AddComponent<BumperCarAi>();
+            _physicsCar.GetComponent<BumperCarAi>().BumperCars = _bumperCars;
+            _physicsCar.transform.position = transform.position;
+            _physicsCar.transform.rotation = transform.rotation;
+        }
 
-    void OnDestroy()
-    {
-        Destroy(_physicsCar.gameObject);
+        void Update()
+        {
+            _physicsCar.SetActive(_bumperCars.CurrentState == BumperCars.State.Running && transform.FindChild("seat").childCount > 0);
+
+            transform.position = _physicsCar.transform.position;
+            transform.rotation = _physicsCar.transform.rotation;
+        }
+
+        void OnDestroy()
+        {
+            Destroy(_physicsCar.gameObject);
+        }
     }
 }
