@@ -19,9 +19,9 @@ public class BumperCar : MonoBehaviour
         _physicsCar.transform.rotation = transform.rotation;
     }
 
-    void FixedUpdate()
+    void Update()
     {
-        _physicsCar.SetActive(_bumperCars.currentState == BumperCars.State.RUNNING);
+        _physicsCar.SetActive(_bumperCars.currentState == BumperCars.State.RUNNING && transform.FindChild("seat").childCount > 0);
 
         transform.position = _physicsCar.transform.position;
         transform.rotation = _physicsCar.transform.rotation;

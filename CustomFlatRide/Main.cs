@@ -3,31 +3,28 @@
 
 public class Main : IMod
 {
+    public string Name { get { return "Dodgems"; } }
+    public string Description { get { return "Dodgems flat ride"; } }
+    public string Path { get; set; }
+    public string Identifier { get; set; }
+
     private GameObject _go;
 
     public void onEnabled()
     {
         _go = new GameObject();
 
-        _go.AddComponent<FlatRidesLoader>();
-
-        _go.GetComponent<FlatRidesLoader>().Path = Path;
-
-        _go.GetComponent<FlatRidesLoader>().Identifier = Identifier;
-
-        _go.GetComponent<FlatRidesLoader>().LoadDodgem();
+        _go.AddComponent<BumperCarsLoader>();
+        _go.GetComponent<BumperCarsLoader>().Path = Path;
+        _go.GetComponent<BumperCarsLoader>().Identifier = Identifier;
+        _go.GetComponent<BumperCarsLoader>().LoadBumperCars();
     }
 
     public void onDisabled()
     {
-        _go.GetComponent<FlatRidesLoader>().UnloadScenery();
+        _go.GetComponent<BumperCarsLoader>().UnloadScenery();
 
         Object.Destroy(_go);
     }
-
-    public string Name { get { return "KMG Experience"; } }
-    public string Description { get { return "KMG Experience Mod"; } }
-    public string Path { get; set; }
-    public string Identifier { get; set; }
 }
 

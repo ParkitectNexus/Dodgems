@@ -3,8 +3,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class BumperCarAI : MonoBehaviour {
-    
+public class BumperCarAI : MonoBehaviour
+{
+
     private Rigidbody _rigidbody;
 
     private Vector3 _wanderTarget = Vector3.zero;
@@ -15,7 +16,7 @@ public class BumperCarAI : MonoBehaviour {
 
     public float wanderJitter = 0.1f;
 
-    public float movingSpeed = 3;
+    public float movingSpeed = 10;
 
     private float _oldHeading;
 
@@ -48,19 +49,17 @@ public class BumperCarAI : MonoBehaviour {
         collider.height = 0.01481656f;
 
         _rigidbody = gameObject.AddComponent<Rigidbody>();
-        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezePositionY;
+        _rigidbody.mass = 3;
     }
 
     void Start()
     {
-        _bumperCars = BumperCars.GetComponentsInChildren<BumperCar>().Except(new [] { gameObject.GetComponent<BumperCar>() }).ToList();
-
-        Physics.gravity = new Vector3(0, -9.81f, 0);
+        _bumperCars = BumperCars.GetComponentsInChildren<BumperCar>().Except(new[] { gameObject.GetComponent<BumperCar>() }).ToList();
     }
 
     void FixedUpdate()
     {
-        _rigidbody.mass = 9;
         switch (_status)
         {
             case STATUS.SEEKING:
@@ -103,7 +102,7 @@ public class BumperCarAI : MonoBehaviour {
             StartCoroutine(Fleeing());
             _fleeing = true;
         }
-        
+
         Vector3 direction = Vector3.zero;
 
         if (FleeTarget != null)
@@ -120,7 +119,7 @@ public class BumperCarAI : MonoBehaviour {
     private IEnumerator Fleeing()
     {
         yield return new WaitForSeconds(Random.value * 0.3f + 0.2f);
-        
+
         _status = STATUS.SEEKING;
         _fleeing = false;
     }
@@ -137,8 +136,8 @@ public class BumperCarAI : MonoBehaviour {
         Vector3 direction = Vector3.zero;
 
         direction += Wander();
-        direction += Separation();
-        //direction += Cohesion();
+        //direction += Separation();
+        direction += Cohesion();
         direction += WallAvoidance();
 
         _rigidbody.AddForce(direction.normalized * movingSpeed);
@@ -169,6 +168,14 @@ public class BumperCarAI : MonoBehaviour {
                 _status = STATUS.FLEEING;
             }
         }
+        else if (collision.gameObject.name.StartsWith("Bound"))
+        {
+            _status = STATUS.SEEKING;
+        }
+        else if (collision.gameObject.name.StartsWith("Mouse") || collision.gameObject.name.StartsWith("Land"))
+        {
+            Physics.IgnoreCollision(GetComponent<Collider>(), collision.collider);
+        }
     }
 
     private BumperCarAI FindTarget(BumperCarAI excluded)
@@ -185,23 +192,23 @@ public class BumperCarAI : MonoBehaviour {
                 if (BumperCarAI.gameObject == gameObject || BumperCarAI.gameObject == excluded.gameObject)
                     continue;
 
-                if (transform.TransformPoint(BumperCarAI.gameObject.transform.position).z < 0)
-                {
+                //if (transform.TransformPoint(BumperCarAI.gameObject.transform.position).z < 0)
+                //{
                     cars.Add(BumperCarAI);
-                }
-                else
-                {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        cars.Add(BumperCarAI);
-                    }
-                }
+                //}
+                //else
+                //{
+                //    for (int i = 0; i < 3; i++)
+                //    {
+                //        cars.Add(BumperCarAI);
+                //    }
+                //}
             }
         }
 
         return cars[(int)(Random.value * cars.Count)];
     }
-    
+
     public Vector3 Wander()
     {
         const float wanderRadius = 2;
@@ -235,13 +242,13 @@ public class BumperCarAI : MonoBehaviour {
             {
                 //scale the force inversely proportional to the agents distance  
                 //from its neighbor.
-                steeringForce += toAgent.normalized/toAgent.magnitude;
+                steeringForce += toAgent.normalized / toAgent.magnitude;
             }
         }
 
         return steeringForce.normalized;
     }
-    
+
     public Vector3 Cohesion()
     {
         //first find the center of mass of all the agents
@@ -273,18 +280,14 @@ public class BumperCarAI : MonoBehaviour {
 
     Vector3 WallAvoidance()
     {
-  //the feelers are contained in a std::vector, m_Feelers
-  //CreateFeelers();
-
-    float DistToThisIP = 0.0f;
+        float DistToThisIP = 0.0f;
         float DistToClosestIP = float.MaxValue;
 
 
         Vector3 SteeringForce = Vector3.zero;
-        Vector3 point = Vector3.zero;
         Vector3 ClosestPoint = Vector3.zero;
 
-        Vector3[] feelers = new[] {Vector3.left, Vector3.forward, Vector3.right};
+        Vector3[] feelers = new[] { Vector3.left, Vector3.forward, Vector3.right };
 
         foreach (Vector3 feeler in feelers)
         {
@@ -292,23 +295,28 @@ public class BumperCarAI : MonoBehaviour {
             GameObject ClosestWall = null;
 
             Vector3 worldFeeler = transform.TransformDirection(feeler);
-
-            RaycastHit hit;
-
+            
             Ray ray = new Ray(transform.position, worldFeeler);
 
-            if (Physics.Raycast(ray, out hit, 5))
+            RaycastHit[] hits = Physics.RaycastAll(ray, 5);
+
+            if (hits.Any())
             {
-                if (hit.collider.gameObject.GetComponent<BumperCarAI>() != null) // een muur
+                foreach (RaycastHit hit in hits)
                 {
-                    //is this the closest found so far? If so keep a record
-                    if (DistToThisIP < DistToClosestIP)
+                    if (hit.collider.gameObject.name.StartsWith("Bound")) // een muur
                     {
-                        DistToClosestIP = DistToThisIP;
+                        //is this the closest found so far? If so keep a record
+                        if (DistToThisIP < DistToClosestIP)
+                        {
+                            DistToClosestIP = DistToThisIP;
 
-                        ClosestWall = hit.collider.gameObject;
+                            ClosestWall = hit.collider.gameObject;
 
-                        ClosestPoint = hit.point;
+                            ClosestPoint = hit.point;
+                        }
+
+                        break;
                     }
                 }
             }

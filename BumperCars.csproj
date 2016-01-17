@@ -71,9 +71,8 @@
   <ItemGroup>
     <Compile Include="CustomFlatRide\BumperCars\BumperCar.cs" />
     <Compile Include="CustomFlatRide\BumperCars\BumperCarAI.cs" />
-    <Compile Include="CustomFlatRide\CustomFlatRideLoader.cs" />
-    <Compile Include="CustomFlatRide\FlatRideScript\BumperCars.cs" />
-    <Compile Include="CustomFlatRide\FlatRideLoader.cs" />
+    <Compile Include="CustomFlatRide\BumperCarsLoader.cs" />
+    <Compile Include="CustomFlatRide\BumperCars\BumperCars.cs" />
     <Compile Include="CustomFlatRide\Main.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
