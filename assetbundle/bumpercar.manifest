@@ -1,12 +1,12 @@
 ManifestFileVersion: 0
-CRC: 2263526711
+CRC: 2827807343
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 07dfd5365de1ef767c688c526fbb4f8e
+    Hash: 99b28ba53bfb1b88ab163769b159dbe3
   TypeTreeHash:
     serializedVersion: 2
-    Hash: 1b0158f56acf9be26c1035312838b0d1
+    Hash: 90a5f0dc015d6189302f13c89aada7b9
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -30,14 +30,6 @@ ClassTypes:
 - Class: 82
   Script: {instanceID: 0}
 - Class: 83
-  Script: {instanceID: 0}
-- Class: 90
-  Script: {instanceID: 0}
-- Class: 95
-  Script: {instanceID: 0}
-- Class: 114
-  Script: {fileID: 11500000, guid: 9f599dfe8a8d4d3459d27579beca90fc, type: 3}
-- Class: 115
   Script: {instanceID: 0}
 Assets:
 - Assets/BumperCar/BumperCars.prefab
