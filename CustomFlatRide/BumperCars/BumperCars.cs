@@ -33,13 +33,22 @@ namespace BumperCars.CustomFlatRide.BumperCars
 
             AudioSource audio = gameObject.AddComponent<AudioSource>();
 
-            audio.clip = Tune;
-            audio.playOnAwake = true;
-            audio.loop = true;
-            audio.spatialBlend = 0.9f;
-            audio.rolloffMode = AudioRolloffMode.Linear;
-            audio.maxDistance = 40;
-            audio.volume = 0.07f;
+            if (!GetComponent<BuildableObject>().isPreview || !GetComponent<BuildableObject>().dontSerialize)
+            {
+                audio.clip = Tune;
+                audio.playOnAwake = true;
+                audio.loop = true;
+                audio.spatialBlend = 0.9f;
+                audio.rolloffMode = AudioRolloffMode.Linear;
+                audio.maxDistance = 40;
+                audio.volume = 0.07f;
+                audio.Play();
+            }
+            else
+            {
+                audio.playOnAwake = false;
+                audio.volume = 0;
+            }
 
             base.Start();
         }
