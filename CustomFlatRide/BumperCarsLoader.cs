@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace BumperCars.CustomFlatRide
@@ -42,9 +43,10 @@ namespace BumperCars.CustomFlatRide
         public void BasicFlatRideSettings(FlatRide flatRide, string name, float price, float excitement, float intensity, float nausea, int x, int Z)
         {
             _sceneryObjects.Add(flatRide);
-            flatRide.fenceGO = AssetManager.Instance.rideFenceGO;
-            flatRide.entranceGO = AssetManager.Instance.rideEntranceGO;
-            flatRide.exitGO = AssetManager.Instance.rideExitGO;
+            flatRide.setFenceStyle(AssetManager.Instance.rideFenceStyles.rideFenceStyles[0].identifier); //= AssetManager.Instance.rideFenceGO;
+            flatRide.entranceGO = AssetManager.Instance.attractionEntranceGO;
+            flatRide.exitGO = AssetManager.Instance.attractionExitGO;
+            flatRide.categoryTag = "Attractions/Flat Ride";
             flatRide.entranceExitBuilderGO = AssetManager.Instance.flatRideEntranceExitBuilderGO;
             flatRide.price = price;
             flatRide.excitementRating = excitement;
@@ -100,11 +102,11 @@ namespace BumperCars.CustomFlatRide
 
             Dictionary<KeyValuePair<float, float>, Waypoint> waypoints = new Dictionary<KeyValuePair<float, float>, Waypoint>();
 
-            for (float x = -2.5f; x <= 2.5f; x += 0.25f)
+            for (float x = -2.5f; x <= 2.5f; x += 0.5f)
             {
-                for (float y = -2.5f; y <= 2.5f; y += 0.25f)
+                for (float y = -2.5f; y <= 2.5f; y += 0.5f)
                 {
-                    Waypoint wp = new Waypoint() {localPosition = new Vector3(x, 0, y)};
+                    Waypoint wp = new Waypoint() {localPosition = new Vector3(x, 0.1f, y)};
 
                     waypoints.Add(new KeyValuePair<float, float>(x, y), wp);
 
@@ -115,11 +117,11 @@ namespace BumperCars.CustomFlatRide
             foreach (KeyValuePair<KeyValuePair<float, float>, Waypoint> pair in waypoints)
             {
                 bool outer = false;
-                for (float x = -0.25f; x <= 0.25f; x += 0.25f)
+                for (float x = -0.5f; x <= 0.5f; x += 0.5f)
                 {
-                    for (float y = -0.25f; y <= 0.25f; y += 0.25f)
+                    for (float y = -0.5f; y <= 0.5f; y += 0.5f)
                     {
-                        if (x == 0 && y == 0)
+                        if ((Math.Abs(x) < 0.1f && Math.Abs(y) < 0.1f) || (Math.Abs(Math.Abs(x) - 0.5f) < 0.1f && Math.Abs(Math.Abs(y) - 0.5f) < 0.1f))
                         {
                             continue;
                         }
